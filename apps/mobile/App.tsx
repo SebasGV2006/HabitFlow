@@ -1,8 +1,8 @@
 import React from 'react';
 import { SafeAreaView, StyleSheet, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { STRINGS } from './src/constants/strings';
-import { THEME } from './src/constants/theme';
+import { STRINGS } from '@/constants/strings';
+import { THEME } from '@/constants/theme';
 
 export default function App(): JSX.Element {
   return (

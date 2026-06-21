@@ -13,7 +13,19 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "allowJs": false,
-    "ignoreDeprecations": "6.0"
+    "ignoreDeprecations": "6.0",
+    "baseUrl": ".",
+    "paths": {
+      "@/components/*": ["src/components/*"],
+      "@/screens/*": ["src/screens/*"],
+      "@/navigation/*": ["src/navigation/*"],
+      "@/store/*": ["src/store/*"],
+      "@/hooks/*": ["src/hooks/*"],
+      "@/services/*": ["src/services/*"],
+      "@/constants/*": ["src/constants/*"],
+      "@/types/*": ["src/types/*"],
+      "@/utils/*": ["src/utils/*"]
+    }
   },
   "include": ["**/*.ts", "**/*.tsx", "src"]
 }

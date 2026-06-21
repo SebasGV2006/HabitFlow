@@ -1,4 +1,26 @@
 export const STRINGS = {
   appTitle: 'HabitFlow',
-  welcome: 'Bienvenido a HabitFlow'
+  welcome: 'Bienvenido a HabitFlow',
+  homeTitle: 'Mis hábitos',
+  emptyState: 'No hay hábitos registrados aún.',
+  addHabit: 'Añadir hábito',
+  editHabit: 'Editar hábito',
+  deleteHabit: 'Eliminar hábito',
+  habitNameLabel: 'Nombre del hábito',
+  habitDescriptionLabel: 'Descripción',
+  habitCategoryLabel: 'Categoría',
+  habitPriorityLabel: 'Prioridad',
+  habitFrequencyLabel: 'Frecuencia',
+  habitSaveButton: 'Guardar hábito',
+  settingsTitle: 'Ajustes',
+  darkModeLabel: 'Modo oscuro',
+  notificationsLabel: 'Notificaciones',
+  languageLabel: 'Idioma',
+  errorRequiredField: 'Este campo es obligatorio.',
+  errorSaveFailed: 'No se pudo guardar. Intenta de nuevo.',
+  successSaved: 'Hábito guardado correctamente.',
+  noHabitsMessage: 'Aún no tienes hábitos activos. Comienza con uno nuevo.',
+  todayLabel: 'Hoy',
+  streakLabel: 'Racha',
+  completedLabel: 'Completado'
 } as const;
