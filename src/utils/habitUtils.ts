@@ -25,7 +25,7 @@ const getWeekDates = (date: Date): Date[] => {
   });
 };
 
-const getDateKey = (value: string | Date): string => {
+const normalizeDateKey = (value: string | Date): string => {
   if (value instanceof Date) {
     return toLocalDateString(value);
   }
@@ -70,87 +70,64 @@ export function calculateHabitStreaks(
   referenceDate: Date = new Date(),
 ): { currentStreak: number; longestStreak: number } {
   const weekStart = getStartOfCalendarWeek(referenceDate);
-  const currentWeekDates = getWeekDates(referenceDate).map((date) => toLocalDateString(date));
 
   const isCompletedWeekForDate = (weekDate: Date) => {
     const weekKeyDates = getWeekDates(weekDate).map((date) => toLocalDateString(date));
-    const weekCount = completionRecords.filter(
-      (record) => record.habitId === habit.id && weekKeyDates.includes(record.fecha),
-    ).length;
+    const weekCount = new Set(
+      completionRecords
+        .filter((record) => record.habitId === habit.id && weekKeyDates.includes(record.fecha))
+        .map((record) => record.fecha),
+    ).size;
     return weekCount >= habit.metaSemanal;
   };
 
-  const completedWeeks: Date[] = [];
-  const cursor = new Date(weekStart);
-  cursor.setDate(cursor.getDate() - 7);
-
-  while (cursor >= new Date(weekStart.getTime() - 365 * 24 * 60 * 60 * 1000)) {
-    if (isCompletedWeekForDate(cursor)) {
-      completedWeeks.push(new Date(cursor));
-    } else {
-      break;
-    }
-    cursor.setDate(cursor.getDate() - 7);
+  const finalizedWeeks: Date[] = [];
+  for (let index = 1; index <= 52; index += 1) {
+    const finalizedWeek = new Date(weekStart);
+    finalizedWeek.setDate(weekStart.getDate() - index * 7);
+    finalizedWeeks.push(finalizedWeek);
   }
 
-  const currentStreak = completedWeeks.length;
+  const weeklyResults = finalizedWeeks.map((weekDate) => ({
+    weekDate,
+    full: isCompletedWeekForDate(weekDate),
+  }));
 
-  const allWeeks: Date[] = [];
-  const scanDate = new Date(referenceDate);
-  scanDate.setHours(0, 0, 0, 0);
-  const earliestWeek = new Date(scanDate);
-  earliestWeek.setDate(earliestWeek.getDate() - 365);
-
-  for (let cursorWeek = new Date(scanDate); cursorWeek >= earliestWeek; cursorWeek.setDate(cursorWeek.getDate() - 7)) {
-    if (cursorWeek.getDay() === 1 || cursorWeek.getDay() === 0) {
-      allWeeks.push(new Date(cursorWeek));
-    }
+  let currentStreak = 0;
+  for (const result of weeklyResults) {
+    if (!result.full) break;
+    currentStreak += 1;
   }
-
-  const weeklyResults = allWeeks
-    .map((weekDate) => {
-      const weekKeyDates = getWeekDates(weekDate).map((date) => toLocalDateString(date));
-      const count = completionRecords.filter(
-        (record) => record.habitId === habit.id && weekKeyDates.includes(record.fecha),
-      ).length;
-      return { weekDate, full: count >= habit.metaSemanal };
-    })
-    .filter((entry) => entry.full)
-    .map((entry) => entry.weekDate);
 
   let longestStreak = 0;
   let streakCounter = 0;
-  let lastDate: Date | null = null;
 
-  for (const weekDate of weeklyResults.slice().reverse()) {
-    if (!lastDate) {
-      streakCounter = 1;
-      lastDate = weekDate;
-      longestStreak = 1;
-      continue;
-    }
-
-    const diffDays = Math.round((lastDate.getTime() - weekDate.getTime()) / (1000 * 60 * 60 * 24));
-    if (diffDays === 7) {
+  for (const result of weeklyResults.slice().reverse()) {
+    if (result.full) {
       streakCounter += 1;
       longestStreak = Math.max(longestStreak, streakCounter);
     } else {
-      streakCounter = 1;
+      streakCounter = 0;
     }
-    lastDate = weekDate;
   }
 
-  const currentWeekIsComplete = currentWeekDates.every((dateKey) => {
-    const recordForDate = completionRecords.some(
-      (record) => record.habitId === habit.id && record.fecha === dateKey,
-    );
-    return recordForDate;
-  });
-
   return {
-    currentStreak: currentWeekIsComplete ? currentStreak + 1 : currentStreak,
-    longestStreak: longestStreak === 0 ? 0 : longestStreak,
+    currentStreak,
+    longestStreak,
   };
+}
+
+export function getLastSevenDays(referenceDate: Date = new Date()): Date[] {
+  return Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(referenceDate);
+    date.setHours(0, 0, 0, 0);
+    date.setDate(referenceDate.getDate() - (6 - index));
+    return date;
+  });
+}
+
+export function getDateKey(date: Date): string {
+  return toLocalDateString(date);
 }
 
 export function getCompletedDatesForWeek(
@@ -190,5 +167,5 @@ export function getWeekStart(date: Date = new Date()): string {
 }
 
 export function getDateValue(value: string | Date): string {
-  return getDateKey(value);
+  return normalizeDateKey(value);
 }

@@ -8,6 +8,7 @@ export interface Habit {
   icono: HabitIcon;
   color: HabitColor;
   metaSemanal: number;
+  horaRecordatorio?: string;
   fechaCreacion: string;
 }
 

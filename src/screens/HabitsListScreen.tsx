@@ -1,11 +1,12 @@
-import React from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useRef } from 'react';
+import { Animated, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { Button, Card, Screen } from '../components';
 import { useTheme } from '../theme';
 import { useHabitsStore } from '../store';
 import { getWeeklyProgress, isHabitCompletedToday, calculateHabitStreaks } from '../utils';
+import type { Habit } from '../types';
 
 const formatDateKey = (date: Date) => {
   const year = date.getFullYear();
@@ -21,53 +22,6 @@ export default function HabitsListScreen() {
   const completionRecords = useHabitsStore((state) => state.completionRecords);
   const toggleHabitCompletion = useHabitsStore((state) => state.toggleHabitCompletion);
   const todayKey = formatDateKey(new Date());
-
-  const renderHabitItem = ({ item }: { item: any }) => {
-    const weeklyProgress = getWeeklyProgress(item, completionRecords);
-    const completedToday = isHabitCompletedToday(item, completionRecords, new Date());
-    const streaks = calculateHabitStreaks(item, completionRecords);
-
-    return (
-      <Pressable
-        onPress={() => navigation.navigate('HabitDetail', { habitId: item.id })}
-        style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
-      >
-        <Card style={[styles.habitCard, { marginBottom: spacing.sm, borderColor: colors.border }]}> 
-          <View style={styles.habitRow}>
-            <View style={[styles.iconBadge, { backgroundColor: item.color + '22', borderColor: item.color }]}>
-              <Ionicons name={item.icono as any} size={22} color={item.color} />
-            </View>
-
-            <View style={styles.habitInfo}>
-              <Text style={[styles.habitName, { color: colors.textPrimary }]}>{item.nombre}</Text>
-              <Text style={[styles.habitProgress, { color: colors.textSecondary }]}> 
-                {weeklyProgress.completedCount} de {weeklyProgress.metaSemanal} esta semana
-              </Text>
-              <Text style={[styles.habitStreak, { color: colors.success }]}>Racha: {streaks.currentStreak} semanas</Text>
-            </View>
-
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => toggleHabitCompletion(item.id, todayKey)}
-              style={[
-                styles.checkButton,
-                {
-                  backgroundColor: completedToday ? item.color : 'transparent',
-                  borderColor: item.color,
-                },
-              ]}
-            >
-              <Ionicons
-                name={completedToday ? 'checkmark' : 'checkmark-outline'}
-                size={18}
-                color={completedToday ? '#FFFFFF' : item.color}
-              />
-            </Pressable>
-          </View>
-        </Card>
-      </Pressable>
-    );
-  };
 
   return (
     <Screen>
@@ -89,7 +43,17 @@ export default function HabitsListScreen() {
             data={habits}
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.listContent}
-            renderItem={renderHabitItem}
+            renderItem={({ item }) => (
+              <HabitListItem
+                habit={item}
+                completionRecords={completionRecords}
+                todayKey={todayKey}
+                onOpen={() => navigation.navigate('HabitDetail', { habitId: item.id })}
+                onToggle={() => toggleHabitCompletion(item.id, todayKey)}
+                spacing={spacing.sm}
+                colors={colors}
+              />
+            )}
             showsVerticalScrollIndicator={false}
           />
         )}
@@ -104,6 +68,68 @@ export default function HabitsListScreen() {
         </Pressable>
       </View>
     </Screen>
+  );
+}
+
+type HabitListItemProps = {
+  habit: Habit;
+  completionRecords: ReturnType<typeof useHabitsStore.getState>['completionRecords'];
+  todayKey: string;
+  onOpen: () => void;
+  onToggle: () => void;
+  spacing: number;
+  colors: ReturnType<typeof useTheme>['colors'];
+};
+
+function HabitListItem({ habit, completionRecords, onOpen, onToggle, spacing, colors }: HabitListItemProps) {
+  const scale = useRef(new Animated.Value(1)).current;
+  const weeklyProgress = getWeeklyProgress(habit, completionRecords);
+  const completedToday = isHabitCompletedToday(habit, completionRecords, new Date());
+  const streaks = calculateHabitStreaks(habit, completionRecords);
+
+  const handleToggle = () => {
+    onToggle();
+    Animated.sequence([
+      Animated.timing(scale, { toValue: 1.16, duration: 100, useNativeDriver: true }),
+      Animated.spring(scale, { toValue: 1, useNativeDriver: true, friction: 5 }),
+    ]).start();
+  };
+
+  return (
+    <Pressable onPress={onOpen} style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}>
+      <Card style={[styles.habitCard, { marginBottom: spacing, borderColor: colors.border }]}> 
+        <View style={styles.habitRow}>
+          <View style={[styles.iconBadge, { backgroundColor: habit.color + '22', borderColor: habit.color }]}>
+            <Ionicons name={habit.icono as any} size={22} color={habit.color} />
+          </View>
+
+          <View style={styles.habitInfo}>
+            <Text style={[styles.habitName, { color: colors.textPrimary }]}>{habit.nombre}</Text>
+            <Text style={[styles.habitProgress, { color: colors.textSecondary }]}>
+              {weeklyProgress.completedCount} de {weeklyProgress.metaSemanal} esta semana
+            </Text>
+            <Text style={[styles.habitStreak, { color: colors.success }]}>Racha: {streaks.currentStreak} semanas</Text>
+          </View>
+
+          <Animated.View style={{ transform: [{ scale }] }}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={completedToday ? `Desmarcar ${habit.nombre} de hoy` : `Marcar ${habit.nombre} como cumplido hoy`}
+              onPress={handleToggle}
+              style={[
+                styles.checkButton,
+                {
+                  backgroundColor: completedToday ? habit.color : colors.surface,
+                  borderColor: habit.color,
+                },
+              ]}
+            >
+              <Ionicons name={completedToday ? 'checkmark' : 'checkmark-outline'} size={18} color={completedToday ? '#FFFFFF' : habit.color} />
+            </Pressable>
+          </Animated.View>
+        </View>
+      </Card>
+    </Pressable>
   );
 }
 

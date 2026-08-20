@@ -31,6 +31,7 @@ export const useHabitsStore = create<HabitsState>()(
           icono: habitInput.icono,
           color: habitInput.color,
           metaSemanal: Math.min(7, Math.max(1, habitInput.metaSemanal)),
+          horaRecordatorio: habitInput.horaRecordatorio,
           fechaCreacion: habitInput.fechaCreacion ?? now,
         };
 
