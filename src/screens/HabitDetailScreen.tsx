@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Button, Card, Screen, TextInput } from '../components';
 import { useTheme } from '../theme';
 import { useHabitsStore } from '../store';
+import { cancelHabitReminder, getDateKey, getLastSevenDays, isValidReminderTime, scheduleHabitReminder } from '../utils';
 
 const iconOptions = [
   { name: 'checkbox-outline', label: 'Check' },
@@ -29,6 +30,7 @@ export default function HabitDetailScreen() {
   const createHabit = useHabitsStore((state) => state.createHabit);
   const updateHabit = useHabitsStore((state) => state.updateHabit);
   const deleteHabit = useHabitsStore((state) => state.deleteHabit);
+  const completionRecords = useHabitsStore((state) => state.completionRecords);
   const { colors, typography } = useTheme();
 
   const isEditing = Boolean(habitId && existingHabit);
@@ -38,6 +40,10 @@ export default function HabitDetailScreen() {
   const [icono, setIcono] = useState(existingHabit?.icono ?? iconOptions[0].name);
   const [color, setColor] = useState(existingHabit?.color ?? colorPalette[0]);
   const [metaSemanal, setMetaSemanal] = useState(existingHabit?.metaSemanal ?? 3);
+  const [horaRecordatorio, setHoraRecordatorio] = useState(existingHabit?.horaRecordatorio ?? '');
+  const [isTimePickerVisible, setIsTimePickerVisible] = useState(false);
+  const [selectedHour, setSelectedHour] = useState(Number(existingHabit?.horaRecordatorio?.split(':')[0] ?? 9));
+  const [selectedMinute, setSelectedMinute] = useState(Number(existingHabit?.horaRecordatorio?.split(':')[1] ?? 0));
 
   useEffect(() => {
     if (existingHabit) {
@@ -46,15 +52,19 @@ export default function HabitDetailScreen() {
       setIcono(existingHabit.icono);
       setColor(existingHabit.color);
       setMetaSemanal(existingHabit.metaSemanal);
+      setHoraRecordatorio(existingHabit.horaRecordatorio ?? '');
+      setSelectedHour(Number(existingHabit.horaRecordatorio?.split(':')[0] ?? 9));
+      setSelectedMinute(Number(existingHabit.horaRecordatorio?.split(':')[1] ?? 0));
     }
   }, [existingHabit]);
 
   const isValid = useMemo(() => {
     const trimmedName = nombre.trim();
-    return trimmedName.length > 0 && metaSemanal >= 1 && metaSemanal <= 7;
-  }, [nombre, metaSemanal]);
+    const validReminder = horaRecordatorio.length === 0 || isValidReminderTime(horaRecordatorio);
+    return trimmedName.length > 0 && metaSemanal >= 1 && metaSemanal <= 7 && validReminder;
+  }, [nombre, metaSemanal, horaRecordatorio]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const trimmedName = nombre.trim();
 
     if (!trimmedName) {
@@ -67,18 +77,32 @@ export default function HabitDetailScreen() {
       return;
     }
 
+    if (horaRecordatorio && !isValidReminderTime(horaRecordatorio)) {
+      Alert.alert('Hora no válida', 'Usa el formato HH:mm, por ejemplo 08:30.');
+      return;
+    }
+
     const payload = {
       nombre: trimmedName,
       descripcion: descripcion.trim() || undefined,
       icono,
       color,
       metaSemanal,
+      horaRecordatorio: horaRecordatorio || undefined,
     };
 
+    let savedHabit;
     if (isEditing && existingHabit) {
       updateHabit(existingHabit.id, payload);
+      savedHabit = { ...existingHabit, ...payload };
     } else {
-      createHabit(payload);
+      savedHabit = createHabit(payload);
+    }
+
+    try {
+      await scheduleHabitReminder(savedHabit);
+    } catch {
+      Alert.alert('Recordatorio no disponible', 'El hábito se guardó, pero no se pudo programar la notificación.');
     }
 
     navigation.goBack();
@@ -97,13 +121,19 @@ export default function HabitDetailScreen() {
         {
           text: 'Eliminar',
           style: 'destructive',
-          onPress: () => {
+          onPress: async () => {
+            await cancelHabitReminder(existingHabit.id);
             deleteHabit(existingHabit.id);
             navigation.goBack();
           },
         },
       ],
     );
+  };
+
+  const confirmReminderTime = () => {
+    setHoraRecordatorio(`${String(selectedHour).padStart(2, '0')}:${String(selectedMinute).padStart(2, '0')}`);
+    setIsTimePickerVisible(false);
   };
 
   return (
@@ -137,6 +167,22 @@ export default function HabitDetailScreen() {
             multiline
             style={[styles.input, styles.textArea]}
           />
+
+          <Text style={[styles.label, { color: colors.textSecondary, fontSize: typography.caption }]}>Hora de recordatorio (opcional)</Text>
+          <View style={styles.reminderRow}>
+            <Pressable
+              onPress={() => setIsTimePickerVisible(true)}
+              style={[styles.timeButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
+            >
+              <Ionicons name="time-outline" size={20} color={colors.primary} />
+              <Text style={[styles.timeButtonText, { color: colors.textPrimary }]}>{horaRecordatorio || 'Elegir hora'}</Text>
+            </Pressable>
+            {horaRecordatorio ? (
+              <Pressable onPress={() => setHoraRecordatorio('')}>
+                <Text style={[styles.clearReminder, { color: colors.danger }]}>Quitar</Text>
+              </Pressable>
+            ) : null}
+          </View>
 
           <Text style={[styles.label, { color: colors.textSecondary, fontSize: typography.caption }]}>Icono</Text>
           <View style={styles.optionGrid}>
@@ -193,6 +239,29 @@ export default function HabitDetailScreen() {
             ))}
           </View>
 
+          {isEditing && existingHabit && (
+            <View style={styles.historySection}>
+              <Text style={[styles.label, { color: colors.textSecondary, fontSize: typography.caption }]}>Historial de los últimos 7 días</Text>
+              <View style={styles.historyRow}>
+                {getLastSevenDays().map((date) => {
+                  const dateKey = getDateKey(date);
+                  const completed = completionRecords.some(
+                    (record) => record.habitId === existingHabit.id && record.fecha === dateKey,
+                  );
+
+                  return (
+                    <View key={dateKey} style={styles.historyDay}>
+                      <Text style={[styles.historyDate, { color: colors.textSecondary }]}>{date.getDate()}</Text>
+                      <View style={[styles.historyIndicator, { backgroundColor: completed ? existingHabit.color : colors.border }]}>
+                        <Ionicons name={completed ? 'checkmark' : 'remove'} size={14} color={completed ? '#FFFFFF' : colors.textSecondary} />
+                      </View>
+                    </View>
+                  );
+                })}
+              </View>
+            </View>
+          )}
+
           <View style={styles.actions}>
             {isEditing && (
               <Button
@@ -212,6 +281,41 @@ export default function HabitDetailScreen() {
           </View>
         </Card>
       </ScrollView>
+      <Modal visible={isTimePickerVisible} transparent animationType="slide" onRequestClose={() => setIsTimePickerVisible(false)}>
+        <View style={styles.modalBackdrop}>
+          <View style={[styles.timeModal, { backgroundColor: colors.surface }]}> 
+            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>Hora de recordatorio</Text>
+            <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>Elige una hora para recibirlo cada día.</Text>
+            <View style={styles.pickerRow}>
+              <View style={styles.pickerColumn}>
+                <Text style={[styles.pickerLabel, { color: colors.textSecondary }]}>Hora</Text>
+                <ScrollView style={styles.pickerScroll} showsVerticalScrollIndicator={false}>
+                  {Array.from({ length: 24 }, (_, hour) => (
+                    <TouchableOpacity key={hour} onPress={() => setSelectedHour(hour)} style={[styles.pickerOption, selectedHour === hour && { backgroundColor: colors.primary }]}>
+                      <Text style={{ color: selectedHour === hour ? '#FFFFFF' : colors.textPrimary, fontWeight: '700' }}>{String(hour).padStart(2, '0')}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+              <Text style={[styles.timeSeparator, { color: colors.textPrimary }]}>:</Text>
+              <View style={styles.pickerColumn}>
+                <Text style={[styles.pickerLabel, { color: colors.textSecondary }]}>Minutos</Text>
+                <ScrollView style={styles.pickerScroll} showsVerticalScrollIndicator={false}>
+                  {Array.from({ length: 60 }, (_, minute) => (
+                    <TouchableOpacity key={minute} onPress={() => setSelectedMinute(minute)} style={[styles.pickerOption, selectedMinute === minute && { backgroundColor: colors.primary }]}>
+                      <Text style={{ color: selectedMinute === minute ? '#FFFFFF' : colors.textPrimary, fontWeight: '700' }}>{String(minute).padStart(2, '0')}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            </View>
+            <View style={styles.modalActions}>
+              <Button title="Cancelar" variant="secondary" onPress={() => setIsTimePickerVisible(false)} style={styles.modalAction} />
+              <Button title="Confirmar" onPress={confirmReminderTime} style={styles.modalAction} />
+            </View>
+          </View>
+        </View>
+      </Modal>
     </Screen>
   );
 }
@@ -256,6 +360,30 @@ const styles = StyleSheet.create({
   },
   input: {
     marginBottom: 16,
+  },
+  reminderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  timeButton: {
+    flex: 1,
+    minHeight: 48,
+    borderWidth: 1,
+    borderRadius: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    gap: 10,
+  },
+  timeButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  clearReminder: {
+    marginLeft: 12,
+    fontWeight: '700',
   },
   textArea: {
     minHeight: 90,
@@ -305,6 +433,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  historySection: {
+    marginBottom: 24,
+  },
+  historyRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  historyDay: {
+    alignItems: 'center',
+    gap: 5,
+  },
+  historyDate: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  historyIndicator: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   actions: {
     gap: 12,
   },
@@ -316,5 +466,61 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     opacity: 0.5,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    justifyContent: 'flex-end',
+  },
+  timeModal: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  modalSubtitle: {
+    marginTop: 4,
+    marginBottom: 16,
+  },
+  pickerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+  },
+  pickerColumn: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  pickerLabel: {
+    fontSize: 12,
+    marginBottom: 6,
+  },
+  pickerScroll: {
+    height: 160,
+    width: '100%',
+  },
+  pickerOption: {
+    height: 40,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  timeSeparator: {
+    fontSize: 24,
+    fontWeight: '700',
+    marginTop: 20,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 18,
+  },
+  modalAction: {
+    flex: 1,
   },
 });
