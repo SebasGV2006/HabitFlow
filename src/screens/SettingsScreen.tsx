@@ -1,6 +1,6 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import { Button, Card, Screen, TextInput } from '../components';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Card, Screen } from '../components';
 import { useThemeStore } from '../store';
 import { useTheme } from '../theme';
 
@@ -16,24 +16,22 @@ export default function SettingsScreen() {
           <Text style={[styles.title, { color: colors.textPrimary, fontSize: typography.title }]}>Ajustes</Text>
           <Text style={[styles.label, { color: colors.textSecondary, fontSize: typography.caption }]}>Tema</Text>
 
-          <View style={styles.options}>
-            {(['system', 'light', 'dark'] as const).map((mode) => (
-              <Button
+          <View style={[styles.segmentedControl, { borderColor: colors.border, backgroundColor: colors.surface }]} accessibilityRole="tablist">
+            {(['light', 'dark', 'system'] as const).map((mode) => (
+              <Pressable
                 key={mode}
-                title={mode === 'system' ? 'System' : mode === 'light' ? 'Light' : 'Dark'}
-                variant={themeMode === mode ? 'primary' : 'secondary'}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: themeMode === mode }}
+                accessibilityLabel={`Usar tema ${mode === 'system' ? 'del sistema' : mode === 'light' ? 'claro' : 'oscuro'}`}
                 onPress={() => setThemeMode(mode)}
-                style={styles.optionButton}
-              />
+                style={[styles.segment, { backgroundColor: themeMode === mode ? colors.primary : 'transparent' }]}
+              >
+                <Text style={[styles.segmentText, { color: themeMode === mode ? '#FFFFFF' : colors.textPrimary }]}>
+                  {mode === 'system' ? 'Sistema' : mode === 'light' ? 'Claro' : 'Oscuro'}
+                </Text>
+              </Pressable>
             ))}
           </View>
-
-          <TextInput
-            value={themeMode}
-            onChangeText={() => undefined}
-            editable={false}
-            style={styles.input}
-          />
         </Card>
       </View>
     </Screen>
@@ -57,14 +55,20 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 12,
   },
-  options: {
-    gap: 8,
-    marginBottom: 16,
+  segmentedControl: {
+    flexDirection: 'row',
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 4,
   },
-  optionButton: {
-    marginBottom: 8,
+  segment: {
+    flex: 1,
+    minHeight: 42,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  input: {
-    marginTop: 8,
+  segmentText: {
+    fontWeight: '700',
   },
 });

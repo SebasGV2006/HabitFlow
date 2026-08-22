@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import { Animated, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { useNavigation } from '@react-navigation/native';
 import { Button, Card, Screen } from '../components';
 import { useTheme } from '../theme';
@@ -89,6 +90,7 @@ function HabitListItem({ habit, completionRecords, onOpen, onToggle, spacing, co
 
   const handleToggle = () => {
     onToggle();
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     Animated.sequence([
       Animated.timing(scale, { toValue: 1.16, duration: 100, useNativeDriver: true }),
       Animated.spring(scale, { toValue: 1, useNativeDriver: true, friction: 5 }),
@@ -96,11 +98,16 @@ function HabitListItem({ habit, completionRecords, onOpen, onToggle, spacing, co
   };
 
   return (
-    <Pressable onPress={onOpen} style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Editar hábito ${habit.nombre}`}
+      onPress={onOpen}
+      style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
+    >
       <Card style={[styles.habitCard, { marginBottom: spacing, borderColor: colors.border }]}> 
         <View style={styles.habitRow}>
           <View style={[styles.iconBadge, { backgroundColor: habit.color + '22', borderColor: habit.color }]}>
-            <Ionicons name={habit.icono as any} size={22} color={habit.color} />
+            <Ionicons accessibilityLabel={`Icono de ${habit.nombre}`} name={habit.icono as any} size={22} color={habit.color} />
           </View>
 
           <View style={styles.habitInfo}>

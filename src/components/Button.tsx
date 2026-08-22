@@ -28,6 +28,8 @@ export function Button({ title, variant = 'primary', style, ...props }: ButtonPr
   return (
     <Pressable
       {...props}
+      accessibilityRole="button"
+      accessibilityLabel={props.accessibilityLabel ?? title}
       style={resolveStyle}
     >
       <Text
