@@ -39,6 +39,8 @@ export default function RootNavigator() {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
+        tabBarAccessibilityLabel:
+          route.name === 'HabitsTab' ? 'Pestaña Hábitos' : route.name === 'Statistics' ? 'Pestaña Estadísticas' : 'Pestaña Ajustes',
         tabBarIcon: ({ color, size }) => {
           let iconName: keyof typeof Ionicons.glyphMap = 'help-circle-outline';
 

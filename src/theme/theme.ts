@@ -12,6 +12,11 @@ export type ThemeColors = {
 };
 
 export type TypographyScale = {
+  fontFamily: string;
+  regular: string;
+  medium: string;
+  semibold: string;
+  bold: string;
   title: number;
   subtitle: number;
   body: number;
@@ -62,6 +67,11 @@ export const darkColors: ThemeColors = {
 };
 
 export const typography: TypographyScale = {
+  fontFamily: 'PlusJakartaSans',
+  regular: 'PlusJakartaSans_400Regular',
+  medium: 'PlusJakartaSans_500Medium',
+  semibold: 'PlusJakartaSans_600SemiBold',
+  bold: 'PlusJakartaSans_700Bold',
   title: 28,
   subtitle: 20,
   body: 16,

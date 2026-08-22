@@ -3,7 +3,7 @@ import { StyleSheet, TextInput as RNTextInput, type TextInputProps } from 'react
 import { useTheme } from '../theme';
 
 export function TextInput({ style, ...props }: TextInputProps) {
-  const { colors, spacing } = useTheme();
+  const { colors, spacing, typography } = useTheme();
 
   return (
     <RNTextInput
@@ -15,6 +15,7 @@ export function TextInput({ style, ...props }: TextInputProps) {
           backgroundColor: colors.surface,
           borderColor: colors.border,
           color: colors.textPrimary,
+          fontFamily: typography.regular,
           paddingHorizontal: spacing.md,
           paddingVertical: spacing.sm,
         },
