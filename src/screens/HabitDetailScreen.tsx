@@ -171,6 +171,8 @@ export default function HabitDetailScreen() {
           <Text style={[styles.label, { color: colors.textSecondary, fontSize: typography.caption }]}>Hora de recordatorio (opcional)</Text>
           <View style={styles.reminderRow}>
             <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={horaRecordatorio ? `Cambiar hora de recordatorio, ${horaRecordatorio}` : 'Elegir hora de recordatorio'}
               onPress={() => setIsTimePickerVisible(true)}
               style={[styles.timeButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
             >
@@ -178,7 +180,7 @@ export default function HabitDetailScreen() {
               <Text style={[styles.timeButtonText, { color: colors.textPrimary }]}>{horaRecordatorio || 'Elegir hora'}</Text>
             </Pressable>
             {horaRecordatorio ? (
-              <Pressable onPress={() => setHoraRecordatorio('')}>
+              <Pressable accessibilityRole="button" accessibilityLabel="Quitar hora de recordatorio" onPress={() => setHoraRecordatorio('')}>
                 <Text style={[styles.clearReminder, { color: colors.danger }]}>Quitar</Text>
               </Pressable>
             ) : null}
@@ -189,6 +191,9 @@ export default function HabitDetailScreen() {
             {iconOptions.map((option) => (
               <TouchableOpacity
                 key={option.name}
+                accessibilityRole="button"
+                accessibilityLabel={`Seleccionar icono ${option.label}`}
+                accessibilityState={{ selected: icono === option.name }}
                 onPress={() => setIcono(option.name)}
                 style={[
                   styles.iconButton,
@@ -209,6 +214,9 @@ export default function HabitDetailScreen() {
             {colorPalette.map((option) => (
               <TouchableOpacity
                 key={option}
+                accessibilityRole="button"
+                accessibilityLabel={`Seleccionar color ${option}`}
+                accessibilityState={{ selected: color === option }}
                 onPress={() => setColor(option)}
                 style={[
                   styles.colorButton,
@@ -223,6 +231,9 @@ export default function HabitDetailScreen() {
             {[1, 2, 3, 4, 5, 6, 7].map((option) => (
               <TouchableOpacity
                 key={option}
+                accessibilityRole="button"
+                accessibilityLabel={`Meta semanal de ${option} días`}
+                accessibilityState={{ selected: metaSemanal === option }}
                 onPress={() => setMetaSemanal(option)}
                 style={[
                   styles.metaButton,
@@ -291,7 +302,14 @@ export default function HabitDetailScreen() {
                 <Text style={[styles.pickerLabel, { color: colors.textSecondary }]}>Hora</Text>
                 <ScrollView style={styles.pickerScroll} showsVerticalScrollIndicator={false}>
                   {Array.from({ length: 24 }, (_, hour) => (
-                    <TouchableOpacity key={hour} onPress={() => setSelectedHour(hour)} style={[styles.pickerOption, selectedHour === hour && { backgroundColor: colors.primary }]}>
+                    <TouchableOpacity
+                      key={hour}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Seleccionar hora ${String(hour).padStart(2, '0')}`}
+                      accessibilityState={{ selected: selectedHour === hour }}
+                      onPress={() => setSelectedHour(hour)}
+                      style={[styles.pickerOption, selectedHour === hour && { backgroundColor: colors.primary }]}
+                    >
                       <Text style={{ color: selectedHour === hour ? '#FFFFFF' : colors.textPrimary, fontWeight: '700' }}>{String(hour).padStart(2, '0')}</Text>
                     </TouchableOpacity>
                   ))}
@@ -302,7 +320,14 @@ export default function HabitDetailScreen() {
                 <Text style={[styles.pickerLabel, { color: colors.textSecondary }]}>Minutos</Text>
                 <ScrollView style={styles.pickerScroll} showsVerticalScrollIndicator={false}>
                   {Array.from({ length: 60 }, (_, minute) => (
-                    <TouchableOpacity key={minute} onPress={() => setSelectedMinute(minute)} style={[styles.pickerOption, selectedMinute === minute && { backgroundColor: colors.primary }]}>
+                    <TouchableOpacity
+                      key={minute}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Seleccionar minuto ${String(minute).padStart(2, '0')}`}
+                      accessibilityState={{ selected: selectedMinute === minute }}
+                      onPress={() => setSelectedMinute(minute)}
+                      style={[styles.pickerOption, selectedMinute === minute && { backgroundColor: colors.primary }]}
+                    >
                       <Text style={{ color: selectedMinute === minute ? '#FFFFFF' : colors.textPrimary, fontWeight: '700' }}>{String(minute).padStart(2, '0')}</Text>
                     </TouchableOpacity>
                   ))}
