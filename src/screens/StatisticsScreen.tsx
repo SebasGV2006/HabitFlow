@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Screen } from '../components';
+import { Card, Screen } from '../components';
 import { useTheme } from '../theme';
 import { useHabitsStore } from '../store';
 import { calculateHabitStreaks } from '../utils';
@@ -125,13 +125,13 @@ export default function StatisticsScreen() {
 
         <View style={styles.summaryRow}>
           <SummaryCard label="Hábitos activos" value={String(activeHabits.length)} colors={colors} />
-          <SummaryCard label="Racha más alta" value={`${highestStreak} sem.`} colors={colors} />
+          <SummaryCard label="Racha más alta" value={`${highestStreak} sem.`} valueColor={colors.success} colors={colors} />
           <SummaryCard label="Últimos 7 días" value={String(lastSevenDaysCount)} colors={colors} />
         </View>
 
-        <View style={[styles.section, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <Card style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Últimos 84 días</Text>
-          <Text style={[styles.sectionCaption, { color: colors.textSecondary }]}>Cumplimientos por día</Text>
+          <Text style={[styles.sectionCaption, { color: colors.textSecondary, fontFamily: typography.medium }]}>Cumplimientos por día</Text>
           <View style={styles.heatmap}>
             {heatmapWeeks.map((week, weekIndex) => (
               <View key={weekIndex} style={styles.heatmapRow}>
@@ -150,11 +150,11 @@ export default function StatisticsScreen() {
             ))}
             <Text style={[styles.legendText, { color: colors.textSecondary }]}>Más</Text>
           </View>
-        </View>
+        </Card>
 
-        <View style={[styles.section, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <Card style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Progreso semanal</Text>
-          <Text style={[styles.sectionCaption, { color: colors.textSecondary }]}>Cumplimientos frente a las metas semanales</Text>
+          <Text style={[styles.sectionCaption, { color: colors.textSecondary, fontFamily: typography.medium }]}>Cumplimientos frente a las metas semanales</Text>
           <View style={styles.chart}>
             {weeklyBars.map((bar) => (
               <View key={toDateKey(bar.start)} style={styles.barColumn}>
@@ -165,18 +165,18 @@ export default function StatisticsScreen() {
               </View>
             ))}
           </View>
-        </View>
+        </Card>
       </ScrollView>
     </Screen>
   );
 }
 
-function SummaryCard({ label, value, colors }: { label: string; value: string; colors: ReturnType<typeof useTheme>['colors'] }) {
+function SummaryCard({ label, value, valueColor, colors }: { label: string; value: string; valueColor?: string; colors: ReturnType<typeof useTheme>['colors'] }) {
   return (
-    <View style={[styles.summaryCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-      <Text style={[styles.summaryValue, { color: colors.textPrimary }]}>{value}</Text>
+    <Card style={styles.summaryCard}>
+      <Text style={[styles.summaryValue, { color: valueColor ?? colors.textPrimary }]}>{value}</Text>
       <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>{label}</Text>
-    </View>
+    </Card>
   );
 }
 
@@ -187,6 +187,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontWeight: '700',
+    fontFamily: 'PlusJakartaSans_700Bold',
     marginBottom: 16,
   },
   summaryRow: {
@@ -197,22 +198,21 @@ const styles = StyleSheet.create({
   summaryCard: {
     flex: 1,
     minHeight: 92,
-    borderWidth: 1,
-    borderRadius: 12,
     padding: 10,
     justifyContent: 'center',
   },
   summaryValue: {
     fontSize: 21,
     fontWeight: '700',
+    fontFamily: 'PlusJakartaSans_700Bold',
     marginBottom: 4,
   },
   summaryLabel: {
     fontSize: 11,
     lineHeight: 14,
+    fontFamily: 'PlusJakartaSans_500Medium',
   },
   section: {
-    borderWidth: 1,
     borderRadius: 14,
     padding: 16,
     marginBottom: 16,
@@ -220,11 +220,13 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
+    fontFamily: 'PlusJakartaSans_700Bold',
   },
   sectionCaption: {
     fontSize: 12,
     marginTop: 4,
     marginBottom: 16,
+    fontFamily: 'PlusJakartaSans_500Medium',
   },
   heatmap: {
     gap: 5,

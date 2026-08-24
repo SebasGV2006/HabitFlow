@@ -16,7 +16,6 @@ export function Card({ children, style, ...props }: CardProps) {
         styles.card,
         {
           backgroundColor: colors.surface,
-          borderColor: colors.border,
           padding: spacing.lg,
         },
         style,
@@ -30,7 +29,6 @@ export function Card({ children, style, ...props }: CardProps) {
 const styles = StyleSheet.create({
   card: {
     borderRadius: 12,
-    borderWidth: 1,
     shadowColor: '#000000',
     shadowOpacity: 0.08,
     shadowRadius: 8,

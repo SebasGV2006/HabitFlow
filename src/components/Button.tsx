@@ -10,7 +10,7 @@ type ButtonProps = PressableProps & {
 };
 
 export function Button({ title, variant = 'primary', style, ...props }: ButtonProps) {
-  const { colors, spacing } = useTheme();
+  const { colors, spacing, typography } = useTheme();
 
   const isPrimary = variant === 'primary';
 
@@ -28,11 +28,14 @@ export function Button({ title, variant = 'primary', style, ...props }: ButtonPr
   return (
     <Pressable
       {...props}
+      accessibilityRole="button"
+      accessibilityLabel={props.accessibilityLabel ?? title}
       style={resolveStyle}
     >
       <Text
         style={{
           color: isPrimary ? '#FFFFFF' : colors.textPrimary,
+          fontFamily: typography.semibold,
           fontWeight: '600',
           textAlign: 'center',
         }}

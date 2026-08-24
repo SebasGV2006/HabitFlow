@@ -1,14 +1,27 @@
 import React, { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
-import { DarkTheme, DefaultTheme, NavigationContainer } from '@react-navigation/native';
+import { DarkTheme, DefaultTheme, NavigationContainer, type Theme } from '@react-navigation/native';
+import { useFonts } from '@expo-google-fonts/plus-jakarta-sans';
+import {
+  PlusJakartaSans_400Regular,
+  PlusJakartaSans_500Medium,
+  PlusJakartaSans_600SemiBold,
+  PlusJakartaSans_700Bold,
+} from '@expo-google-fonts/plus-jakarta-sans';
 import { useTheme } from './src/theme';
 import { useHabitsStore } from './src/store';
 import { configureNotifications, scheduleHabitReminder } from './src/utils';
 import RootNavigator from './src/navigation/RootNavigator';
 
 export default function App() {
-  const { colors, isDark } = useTheme();
+  const { colors, isDark, typography } = useTheme();
   const hasHydrated = useHabitsStore((state) => state.hasHydrated);
+  const [fontsLoaded] = useFonts({
+    PlusJakartaSans_400Regular,
+    PlusJakartaSans_500Medium,
+    PlusJakartaSans_600SemiBold,
+    PlusJakartaSans_700Bold,
+  });
 
   useEffect(() => {
     if (!hasHydrated) {
@@ -38,9 +51,15 @@ export default function App() {
     };
   }, [hasHydrated]);
 
-  const navigationTheme = isDark
+  const navigationTheme: Theme = isDark
     ? {
         ...DarkTheme,
+        fonts: {
+          regular: { fontFamily: typography.fontFamily, fontWeight: '400' },
+          medium: { fontFamily: typography.fontFamily, fontWeight: '500' },
+          bold: { fontFamily: typography.fontFamily, fontWeight: '700' },
+          heavy: { fontFamily: typography.fontFamily, fontWeight: '700' },
+        },
         colors: {
           ...DarkTheme.colors,
           primary: colors.primary,
@@ -53,6 +72,12 @@ export default function App() {
       }
     : {
         ...DefaultTheme,
+        fonts: {
+          regular: { fontFamily: typography.fontFamily, fontWeight: '400' },
+          medium: { fontFamily: typography.fontFamily, fontWeight: '500' },
+          bold: { fontFamily: typography.fontFamily, fontWeight: '700' },
+          heavy: { fontFamily: typography.fontFamily, fontWeight: '700' },
+        },
         colors: {
           ...DefaultTheme.colors,
           primary: colors.primary,
@@ -64,7 +89,7 @@ export default function App() {
         },
       };
 
-  if (!hasHydrated) {
+  if (!hasHydrated || !fontsLoaded) {
     return (
       <View style={[styles.loaderContainer, { backgroundColor: colors.background }]}>
         <ActivityIndicator size="large" color={colors.primary} />
